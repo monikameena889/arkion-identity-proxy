@@ -1,0 +1,20 @@
+# Authorization policy. Default deny: anything not explicitly allowed here is refused with 403.
+# Hot-reloaded: edit and save (or send SIGHUP); invalid files are rejected and the previous
+# policy stays active. Path patterns: exact ("/payments") or a trailing "/*" segment prefix
+# ("/reports/*" matches "/reports/a" and "/reports/a/b", but not "/reports" or "/reportsX").
+policies:
+  - identity: "spiffe://acme/prod/payment"
+    allow:
+      - method: POST
+        path: "/payments"
+
+  - identity: "spiffe://acme/prod/reporting"
+    allow:
+      - method: GET
+        path: "/reports/*"
+
+  # DNS-SAN identity (used when a certificate has no SPIFFE ID and REQUIRE_SPIFFE_ID=false).
+  - identity: "dns:batch.acme.internal"
+    allow:
+      - method: GET
+        path: "/batch"

@@ -1,0 +1,25 @@
+# 1. Generate the demo PKI on the host (once):
+#      docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/pki:/pki" arkion-identity-proxy pki-gen /pki
+# 2. UID=$(id -u) GID=$(id -g) docker compose up --build
+services:
+  backend:
+    image: arkion-identity-proxy:latest
+    command: ["echo-upstream", "0.0.0.0:8080"]
+    healthcheck: { disable: true }
+  proxy:
+    build: .
+    image: arkion-identity-proxy:latest
+    depends_on: [backend]
+    user: "${UID:-10001}:${GID:-10001}"
+    ports:
+      - "8443:8443"
+      - "127.0.0.1:9901:9901"
+    environment:
+      UPSTREAM_URL: http://backend:8080
+      TRUST_DOMAINS: acme
+    volumes:
+      - ./pki:/pki:ro            # cert, key and trust bundle (edit trust-bundle.pem to rotate)
+      - ./config:/config:ro      # policy.yaml (hot-reloaded)
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
